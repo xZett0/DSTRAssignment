@@ -29,10 +29,6 @@ void loadCSVData(string filename, StudentRecord& system) {
 
 		getline(ss, token, ','); // StudentID
 		s.studentID = token;
-		if (system.searchByID(s.studentID, true) != nullptr) {
-			cout << "Skipping Duplicate Student: " << s.studentID << endl;
-			continue;
-		}
 
 		getline(ss, token, ','); // FullName
 		s.fullName= token;
@@ -91,16 +87,17 @@ void runPerformanceTests(string filename) {
 	total_us = chrono::duration_cast<chrono::microseconds>(end - start).count();
 	cout << "[T2] Display Time (Traversal)   : " << total_us << " us\n";
 
-	// --- T3. INSERT 10 RECORDS (Average) ---
+	// --- T3. INSERT x RECORDS (Average) ---
+	int number = 10000;
 	start = chrono::high_resolution_clock::now();
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < number; i++) {
 		Student dummy = { "TP9999" + to_string(i), "Test Student", "CT101", 1, 3.5f, "012-3456789" };
 		// Inserting at the very end using your unoptimized getTotalCount()
 		system.insertAtPosition(dummy, system.getTotalCount() + 1);
 	}
 	end = chrono::high_resolution_clock::now();
 	total_us = chrono::duration_cast<chrono::microseconds>(end - start).count();
-	cout << "[T3] Insert 10 Time (Average)   : " << (total_us / 10) << " us per insert\n";
+	cout << "[T3] Insert " << number << " Time (Average)   : " << (total_us / number) << " us per insert\n";
 
 	// --- T4. SEARCH 3 IDs (Average) ---
 	// 1. Dynamically find the real First, Middle, and Last IDs for THIS specific file
@@ -132,12 +129,12 @@ void runPerformanceTests(string filename) {
 
 	// --- T6. DELETE 10 RECORDS (Average) ---
 	start = chrono::high_resolution_clock::now();
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < number; i++) {
 		system.deleteByID("TP9999" + to_string(i));
 	}
 	end = chrono::high_resolution_clock::now();
 	total_us = chrono::duration_cast<chrono::microseconds>(end - start).count();
-	cout << "[T6] Delete 10 Time (Average)   : " << (total_us / 10) << " us per delete\n";
+	cout << "[T6] Delete " << number << " Time (Average)   : " << (total_us / number) << " us per delete\n";
 
 	// --- T7. COUNT ---
 	start = chrono::high_resolution_clock::now();
