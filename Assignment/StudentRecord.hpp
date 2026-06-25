@@ -25,6 +25,8 @@ struct Node {
 class StudentRecord {
 private: 
 	Node* head;
+	Node* tail;
+	int count;
 
 public:
 	StudentRecord(); // Constructor

@@ -6,6 +6,8 @@ using namespace std;
 
 StudentRecord::StudentRecord() {
 	head = nullptr;
+	tail = nullptr;
+	count = 0;
 }
 
 StudentRecord::~StudentRecord() {
@@ -21,36 +23,46 @@ StudentRecord::~StudentRecord() {
 
 
 void StudentRecord::insertAtPosition(Student s, int position, bool silent) {
-	if (position < 1) {
-		cout << "Insertion out of range for " << s.studentID << endl;
+	if (position < 1 || position > count + 1) {
+		if (!silent) cout << "[Insert Error] Position " << position << " is out of bounds! Valid range is 1 to " << (count + 1) << ".\n";
 		return;
 	}
-
 	if (searchByID(s.studentID, true) != nullptr) {
 		if (!silent) cout << "[Insert Error] Duplicate Student ID " << s.studentID << " rejected!\n";
 		return; 
 	}
 
 	Node* newNode = new Node(s);
+	newNode->data = s;
+	newNode->next = nullptr;
 	
-	// our linked-list is empty or inserting at first position
-	if (position == 1 || head == nullptr) {
-		newNode->next = head;
+	if (head == nullptr) { // inserting into an empty list
 		head = newNode;
+		tail = newNode;
+		count++;
 		return;
 	}
-	
-	// inserting in the middle or end
-	Node* runner = head;
-	int currentPos = 1;
+	if (position == 1) { // inserting at first position
+		newNode->next = head;
+		head = newNode;
+		count++;
+		return;
+	}
+	if (position == count + 1) { // inserting at last position
+		tail->next = newNode;
+		tail = newNode;
+		count++;
+		return;
+	}
 
-	while (runner->next != nullptr && currentPos < position - 1) {
+	Node* runner = head; // inserting in the middle
+	for (int i = 1; i < position - 1; i++) {
 		runner = runner->next;
-		currentPos++;
 	}
 
 	newNode->next = runner->next;
 	runner->next = newNode;
+	count++;
 }
 
 bool StudentRecord::deleteByID(string id, bool silent) {
@@ -60,25 +72,32 @@ bool StudentRecord::deleteByID(string id, bool silent) {
 	}
 	
 	if (head->data.studentID == id) {
-		Node* nodeToDelete = head;
+		Node* temp = head;
 		head = head->next;
-		delete nodeToDelete;
+		if (head == nullptr) tail = nullptr; // list is now empty tail = nullptr
+		delete temp;
+		count--;
+		return true;
+	}
+	
+	Node* runner = head;
+	while (runner->next != nullptr && runner->next->data.studentID != id) {
+		runner = runner->next;
+	}
+
+	if (runner->next != nullptr) {
+		Node* temp = runner->next;
+		runner->next = temp->next;
+
+		if (runner->next == nullptr) {
+			tail = runner;
+		}
+
+		delete temp;
+		count--;
 		return true;
 	}
 
-	Node* prev = head;
-	Node* curr = head->next;
-
-	while (curr != nullptr) {
-		if (curr->data.studentID == id) {
-			prev->next = curr->next;
-			delete curr;
-			return true;
-		}
-
-		prev = curr;
-		curr = curr->next;
-	}
 
 	if (!silent) cout << "[Delete Result] Student ID " << id << " not found. No deletion made.\n";
 	return false;
@@ -183,15 +202,7 @@ void StudentRecord::displayAll(bool silent) {
 }
 
 int StudentRecord::getTotalCount() {
-	int total = 0;
-	Node* runner = head;
-	
-	while (runner != nullptr) {
-		total++;
-		runner = runner->next;
-	}
-
-	return total;
+	return count;
 }
 
 void StudentRecord::sortListByCGPA() {
@@ -268,26 +279,20 @@ void StudentRecord::frontBackSplit(Node* source, Node** frontRef, Node** backRef
 		return;
 	}
 
-	int length = 0;
-	Node* counter = source;
-	while (counter != nullptr) {
-		length++;
-		counter = counter->next;
+	Node* slow = source;
+	Node* fast = source->next;
+
+	while (fast != nullptr) {
+		fast = fast->next;
+		if (fast != nullptr) {
+			slow = slow->next;
+			fast = fast->next;
+		}
 	}
 
-	int midpoint = length / 2;
-	if (length % 2 != 0) {
-		midpoint++;
-	}
-
-	Node* curr = source;
-	for (int i = 1; i < midpoint; i++) {
-		curr = curr->next;
-	}
-	
 	*frontRef = source;
-	*backRef = curr->next;
-	curr->next = nullptr;
+	*backRef = slow->next;
+	slow->next = nullptr;
 }
 
 

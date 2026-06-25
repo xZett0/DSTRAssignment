@@ -183,6 +183,18 @@ void showEdgeCaseHandling() {
 	cout << "\n======================================================\n";
 }
 
+void proofMergeWorks() {
+	StudentRecord visualTest;
+	cout << "--- LOADING 500 STUDENTS ---\n";
+	loadCSVData("students_500.csv", visualTest);
+
+	cout << "\n--- SORTING BY CGPA ---\n";
+	visualTest.sortListByCGPA();
+
+	cout << "\n--- DISPLAYING TOP RESULTS ---\n";
+	visualTest.displayAll();
+}
+
 int main() {
 	string files[] = {
 		"students_500.csv",
@@ -196,6 +208,9 @@ int main() {
 	}
 
 	showEdgeCaseHandling();
+	cout << endl << endl;
+	proofMergeWorks();
+	cout << endl;
 
 	return 0;
 }
