@@ -82,7 +82,7 @@ void runPerformanceTests(string filename) {
 
 	// --- T2. DISPLAY ALL ---
 	start = chrono::high_resolution_clock::now();
-	// system.displayAll();
+	system.displayAll(true);
 	end = chrono::high_resolution_clock::now();
 	total_us = chrono::duration_cast<chrono::microseconds>(end - start).count();
 	cout << "[T2] Display Time (Traversal)   : " << total_us << " us\n";

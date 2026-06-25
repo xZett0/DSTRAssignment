@@ -214,6 +214,10 @@ void StudentRecord::sortListByCGPA() {
 	head = mergeSortRec(head);
 
 	Node* runner = head;
+	while (runner->next != nullptr) {
+		runner = runner->next;
+	}
+	tail = runner;
 }
 
 Node* StudentRecord::mergeSortRec(Node* headRef) {
