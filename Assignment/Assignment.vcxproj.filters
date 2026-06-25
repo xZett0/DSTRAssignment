@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Text Include="data\DATASET_README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="data\programmes.csv" />
+    <None Include="data\students_500.csv" />
+    <None Include="data\students_2000.csv" />
+    <None Include="data\students_8000.csv" />
+    <None Include="data\students_30000.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="StudentRecord.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StudentRecord.hpp" />
+  </ItemGroup>
+</Project>
