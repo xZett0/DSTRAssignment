@@ -256,7 +256,7 @@ Node* StudentRecord::sortedMerge(Node* a, Node* b) {
 	Node* mergeTail = result;
 
 	while (a != nullptr && b != nullptr) {
-		if (a->data.cgpa <= b->data.cgpa) {
+		if (a->data.cgpa >= b->data.cgpa) {
 			mergeTail->next = a;
 			a = a->next;
 		}
