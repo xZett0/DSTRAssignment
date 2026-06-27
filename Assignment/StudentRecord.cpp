@@ -22,14 +22,14 @@ StudentRecord::~StudentRecord() {
 }
 
 
-void StudentRecord::insertAtPosition(Student s, int position, bool silent) {
+bool StudentRecord::insertAtPosition(Student s, int position, bool silent) {
 	if (position < 1 || position > count + 1) {
 		if (!silent) cout << "[Insert Error] Position " << position << " is out of bounds! Valid range is 1 to " << (count + 1) << ".\n";
-		return;
+		return false;
 	}
 	if (searchByID(s.studentID, true) != nullptr) {
 		if (!silent) cout << "[Insert Error] Duplicate Student ID " << s.studentID << " rejected!\n";
-		return; 
+		return false; 
 	}
 
 	Node* newNode = new Node(s);
@@ -40,19 +40,19 @@ void StudentRecord::insertAtPosition(Student s, int position, bool silent) {
 		head = newNode;
 		tail = newNode;
 		count++;
-		return;
+		return true;
 	}
 	if (position == 1) { // inserting at first position
 		newNode->next = head;
 		head = newNode;
 		count++;
-		return;
+		return true;
 	}
 	if (position == count + 1) { // inserting at last position
 		tail->next = newNode;
 		tail = newNode;
 		count++;
-		return;
+		return true;
 	}
 
 	Node* runner = head; // inserting in the middle
@@ -63,6 +63,8 @@ void StudentRecord::insertAtPosition(Student s, int position, bool silent) {
 	newNode->next = runner->next;
 	runner->next = newNode;
 	count++;
+
+	return true;
 }
 
 bool StudentRecord::deleteByID(string id, bool silent) {
@@ -242,7 +244,7 @@ Node* StudentRecord::sortedMerge(Node* a, Node* b) {
 
 	Node* result = nullptr;
 
-	if (a->data.cgpa <= b->data.cgpa) {
+	if (a->data.cgpa >= b->data.cgpa) {
 		result = a;
 		a = a->next;
 	}

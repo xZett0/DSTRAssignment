@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <limits> 
 #include "StudentRecord.hpp"
 
 using namespace std;
@@ -192,7 +193,7 @@ void proofMergeWorks() {
 	visualTest.displayAll();
 }
 
-int main() {
+void runAllBenchmarks() {
 	string files[] = {
 		"students_500.csv",
 		"students_2000.csv",
@@ -208,6 +209,145 @@ int main() {
 	cout << endl << endl;
 	proofMergeWorks();
 	cout << endl;
+}
+
+int main() {
+	StudentRecord activeSystem;
+	int choice = -1;
+
+	while (choice != 0) {
+		cout << "\n======================================================\n";
+		cout << "      STUDENT RECORD MANAGEMENT SYSTEM (LINKED LIST)  \n";
+		cout << "======================================================\n";
+		cout << "1. Load Data from CSV\n";
+		cout << "2. Display All Students\n";
+		cout << "3. Insert New Student\n";
+		cout << "4. Delete Student by ID\n";
+		cout << "5. Search Student by ID\n";
+		cout << "6. Search Student by Name\n";
+		cout << "7. Sort Database by CGPA\n";
+		cout << "8. Run Automated Performance Benchmarks\n";
+		cout << "0. Exit System\n";
+		cout << "======================================================\n";
+		cout << "Enter your choice: ";
+
+		if (!(cin >> choice)) {
+			cout << "Invalid input. Please enter a number.\n";
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			continue;
+		}
+
+		switch (choice) {
+		case 1: {
+			string filename;
+			cout << "Enter filename (e.g., students_500.csv): ";
+			cin >> filename;
+			loadCSVData(filename, activeSystem);
+			break;
+		}
+		case 2: {
+			activeSystem.displayAll();
+			cout << "\nTotal Records: " << activeSystem.getTotalCount() << "\n";
+			break;
+		}
+		case 3: {
+			Student s;
+			cout << "\n--- Enter New Student Details ---\n";
+			cout << "Student ID (e.g., TP012345): ";
+			cin >> s.studentID;
+
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+			cout << "Full Name: ";
+			while (getline(cin, s.fullName) && s.fullName.empty()) {
+				cout << "Name cannot be empty. Full Name: ";
+			}
+
+			cout << "Programme (e.g., CT101): ";
+			while (getline(cin, s.programme) && s.programme.empty()) {
+				cout << "Programme name cannot be empty. Programme (e.g., CT101): ";
+			}
+
+			cout << "Year of Study (1 - 5): ";
+			while (!(cin >> s.yearOfStudy) || s.yearOfStudy < 1 || s.yearOfStudy > 5 || cin.peek() == '.') {
+				cout << "Invalid input. Please enter a whole number between 1 and 5: ";
+				cin.clear();
+				cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			}
+
+			cout << "CGPA (0.0 - 4.0): ";
+			while (!(cin >> s.cgpa) || s.cgpa < 0.0f || s.cgpa > 4.0f) {
+				cout << "Invalid CGPA. Please enter a decimal between 0.0 and 4.0: ";
+				cin.clear();
+				cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			}
+
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+			cout << "Contact Number: ";
+			getline(cin, s.contactNum);
+
+			if (activeSystem.insertAtPosition(s, activeSystem.getTotalCount() + 1)) {
+				cout << "Insertion attempt complete. Student added successfully.\n";
+			}
+			break;
+		}
+		case 4: {
+			string id;
+			cout << "Enter Student ID to delete: ";
+			cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear leftover enters
+			getline(cin, id); // Grabs the whole line safely
+			if (activeSystem.deleteByID(id)) {
+				cout << "Successfully deleted " << id << "\n";
+			}
+			break;
+		}
+		case 5: {
+			string id;
+			cout << "Enter Student ID to search: ";
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			getline(cin, id);
+			Node* found = activeSystem.searchByID(id);
+			if (found != nullptr) {
+				cout << "\n--- Student Found ---\n";
+				cout << "Name:  " << found->data.fullName << "\n";
+				cout << "ID:    " << found->data.studentID << "\n";
+				cout << "Prog:  " << found->data.programme << " (Year " << found->data.yearOfStudy << ")\n";
+				cout << "CGPA:  " << found->data.cgpa << "\n";
+				cout << "Phone: " << found->data.contactNum << "\n";
+			}
+			break;
+		}
+		case 6: {
+			string name;
+			cout << "Enter Full Name to search (exact match): ";
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			getline(cin, name);
+			activeSystem.searchByName(name);
+			break;
+		}
+		case 7: {
+			cout << "Sorting records by CGPA...\n";
+			activeSystem.sortListByCGPA();
+			cout << "Sorting complete! Select option 2 to view the sorted list.\n";
+			break;
+		}
+		case 8: {
+			cout << "\nWARNING: This will run tests on separate instances and may take some time.\n";
+			runAllBenchmarks();
+			break;
+		}
+		case 0: {
+			cout << "Exiting system. Goodbye!\n";
+			break;
+		}
+		default: {
+			cout << "Invalid choice. Please select a valid option.\n";
+			break;
+		}
+		}
+	}
 
 	return 0;
 }

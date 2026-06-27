@@ -32,7 +32,7 @@ public:
 	StudentRecord(); // Constructor
 	~StudentRecord();
 
-	void insertAtPosition(Student s, int position, bool silent = false);
+	bool insertAtPosition(Student s, int position, bool silent = false);
 	bool deleteByID(string id, bool silent = false);
 
 	void searchByName(string name); // should print all matches since names are not unique like ID
