@@ -4,9 +4,98 @@
 #include <string>
 #include <chrono>
 #include <limits> 
+#include <iomanip>
 #include "StudentRecord.hpp"
 
 using namespace std;
+
+struct ProgrammeDetails {
+	string code;
+	string name;
+	string faculty;
+	int durationYears = -1;
+};
+
+ProgrammeDetails validProgrammes[50];
+int numProgrammes = 0;
+
+void loadProgrammesTable() {
+	string filename = ".\\data\\programmes.csv";
+	ifstream file;
+
+	file.open(filename);
+
+	if (!file.is_open()) {
+		file.clear();
+		filename = "programmes.csv";
+		file.open(filename);
+	}
+
+	if (!file.is_open()) {
+		cout << "[System] Warning: Could not open programmes.csv. Advanced validation disabled.\n";
+		return;
+	}
+
+	string line;
+	getline(file, line); 
+
+	while (getline(file, line) && numProgrammes < 50) {
+		stringstream ss(line);
+		string token;
+
+		getline(ss, token, ',');
+		validProgrammes[numProgrammes].code = token;
+
+		getline(ss, token, ',');
+		validProgrammes[numProgrammes].name = token;
+
+		getline(ss, token, ',');
+		validProgrammes[numProgrammes].faculty = token;
+
+		getline(ss, token, ',');
+		try {
+			validProgrammes[numProgrammes].durationYears = stoi(token);
+		}
+		catch (...) {
+			validProgrammes[numProgrammes].durationYears = 4; 
+		}
+
+		numProgrammes++;
+	}
+	file.close();
+	cout << "[System] Loaded " << numProgrammes << " valid programmes for relational reference.\n";
+}
+int getProgrammeDuration(string code) {
+	if (numProgrammes == 0) return 5;
+	for (int i = 0; i < numProgrammes; i++) {
+		if (validProgrammes[i].code == code) {
+			return validProgrammes[i].durationYears;
+		}
+	}
+	return -1;
+}
+
+void displayAllProgrammes() {
+	cout << "\n======================================================\n";
+	cout << "           VALID PROGRAMMES REFERENCE TABLE           \n";
+	cout << "======================================================\n";
+
+	if (numProgrammes == 0) {
+		cout << "[System Error] No programmes loaded. Check programmes.csv.\n";
+		return;
+	}
+
+	// Setting up clean columns
+	cout << left << setw(12) << "Code" << setw(15) << "Max Years" << "Faculty\n";
+	cout << string(70, '-') << "\n";
+
+	for (int i = 0; i < numProgrammes; i++) {
+		cout << left << setw(12) << validProgrammes[i].code
+			<< setw(15) << validProgrammes[i].durationYears
+			<< validProgrammes[i].faculty << "\n";
+	}
+	cout << "======================================================\n";
+}
 
 void loadCSVData(string filename, StudentRecord& system) {
 	if (filename.find("data") == string::npos) {
@@ -51,11 +140,17 @@ void loadCSVData(string filename, StudentRecord& system) {
 			s.cgpa = parsedCGPA;
 
 			getline(ss, token, ','); // ContactNumber
-			s.contactNum = token;
-			
-			// finally insert the data 
-			system.insertAtPosition(s, system.getTotalCount() + 1);
+			if (!token.empty() && token.back() == '\r') {
+				token.pop_back();
+			}
 
+			s.contactNum = token;
+
+			if (getProgrammeDuration(s.programme) == -1) {
+				throw invalid_argument("Invalid Programme Code");
+			}
+
+			system.insertAtPosition(s, system.getTotalCount() + 1, true);
 		}
 		catch (...) {
 			cout << "Bad line skipped for ID: " << s.studentID << "\n";
@@ -154,29 +249,59 @@ void showEdgeCaseHandling() {
 	cout << "         TESTING ERROR HANDLING & EDGE CASES          \n";
 	cout << "======================================================\n";
 
-	// --- EDGE CASE 1: EMPTY STRUCTURE OPERATIONS ---
-	cout << "\n[TEST 1] Operations on Empty Database:\n";
+	// --- TEST 1: EMPTY DATABASE PROTECTIONS ---
+	cout << "\n[TEST 1] Empty Database Protections:\n";
+	cout << "-> Attempting to Search ID 'TP123456'...\n";
 	system.searchByID("TP123456");
+
+	cout << "-> Attempting to Delete ID 'TP123456'...\n";
 	system.deleteByID("TP123456");
+
+	// --- TEST 2: OUT OF BOUNDS INSERTION ---
+	cout << "\n[TEST 2] Out-of-Bounds Insertion Protection:\n";
+	Student dummy1 = { "TP000001", "Bounds Tester", "CT101", 1, 3.0f, "012-345" };
+	cout << "-> Attempting to insert at Position 5 (List is currently empty)...\n";
+	system.insertAtPosition(dummy1, 5);
 
 	// Load data for the remaining tests
 	cout << "\n[System] Loading students_500.csv for further tests...\n";
 	loadCSVData("students_500.csv", system);
 
-	// --- EDGE CASE 2: NON-EXISTENT RECORDS ---
-	cout << "\n[TEST 2] Non-Existent Records in Populated Database:\n";
-	system.searchByID("TP000001");
-	system.deleteByID("TP000001");
+	// --- TEST 3: NON-EXISTENT RECORDS ---
+	cout << "\n[TEST 3] Non-Existent Records in Populated Database:\n";
+	cout << "-> Attempting to Search missing ID 'TP999999'...\n";
+	system.searchByID("TP999999");
 
-	// --- EDGE CASE 3: DUPLICATE ID INSERTION ---
-	cout << "\n[TEST 3] Duplicate ID Insertion:\n";
-	Student dummy = { "TP999999", "Duplicate Tester", "CT101", 1, 4.0f, "012-345" };
+	cout << "-> Attempting to Delete missing ID 'TP999999'...\n";
+	system.deleteByID("TP999999");
 
-	cout << "-> Attempting first insertion (Should Succeed silently)...\n";
-	system.insertAtPosition(dummy, 1);
+	// --- TEST 4: DUPLICATE ID INSERTION (The Safety Tax) ---
+	cout << "\n[TEST 4] Duplicate ID Protection (The 'Safety Tax'):\n";
+	Student dummy2 = { "TP888888", "Duplicate Tester", "CT101", 1, 4.0f, "012-345" };
 
-	cout << "-> Attempting duplicate insertion (Should throw custom error)...\n";
-	system.insertAtPosition(dummy, 2);
+	cout << "-> Attempting first insertion of TP888888 (Should Succeed)...\n";
+	if (system.insertAtPosition(dummy2, 1)) cout << "[Insert Result] Success!\n";
+
+	cout << "-> Attempting duplicate insertion of TP888888 (Should be blocked)...\n";
+	system.insertAtPosition(dummy2, 2);
+
+	// --- TEST 5: RELATIONAL DATA INTEGRITY ---
+	cout << "\n[TEST 5] Relational Data & Bounds Validation (Menu Simulation):\n";
+
+	string testProg = "JEDI101";
+	cout << "-> Validating Fake Programme '" << testProg << "':\n   Result: ";
+	int duration = getProgrammeDuration(testProg);
+	if (duration == -1) cout << "REJECTED (Not found in programmes.csv reference table)\n";
+
+	testProg = "BM102"; 
+	int testYear = 4;
+	cout << "-> Validating Year " << testYear << " for 3-Year Programme '" << testProg << "':\n   Result: ";
+	duration = getProgrammeDuration(testProg);
+	if (testYear > duration) cout << "REJECTED (Exceeds max duration of " << duration << " years)\n";
+
+	float testCGPA = 4.5f;
+	cout << "-> Validating CGPA " << testCGPA << ":\n   Result: ";
+	if (testCGPA < 0.0f || testCGPA > 4.0f) cout << "REJECTED (Strictly bounded between 0.0 and 4.0)\n";
 
 	cout << "\n======================================================\n";
 }
@@ -192,6 +317,7 @@ void proofMergeWorks() {
 	cout << "\n--- DISPLAYING TOP RESULTS ---\n";
 	visualTest.displayAll();
 }
+
 
 void runAllBenchmarks() {
 	string files[] = {
@@ -214,6 +340,7 @@ void runAllBenchmarks() {
 int main() {
 	StudentRecord activeSystem;
 	int choice = -1;
+	loadProgrammesTable();
 
 	while (choice != 0) {
 		cout << "\n======================================================\n";
@@ -227,6 +354,8 @@ int main() {
 		cout << "6. Search Student by Name\n";
 		cout << "7. Sort Database by CGPA\n";
 		cout << "8. Run Automated Performance Benchmarks\n";
+		cout << "9. View Valid Programmes Reference Table\n"; 
+		cout << "10. Show Edge Case and Error Handling\n"; 
 		cout << "0. Exit System\n";
 		cout << "======================================================\n";
 		cout << "Enter your choice: ";
@@ -256,22 +385,37 @@ int main() {
 			cout << "\n--- Enter New Student Details ---\n";
 			cout << "Student ID (e.g., TP012345): ";
 			cin >> s.studentID;
-
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 			cout << "Full Name: ";
-			while (getline(cin, s.fullName) && s.fullName.empty()) {
-				cout << "Name cannot be empty. Full Name: ";
+			while (true) {
+				getline(cin, s.fullName);
+				if (s.fullName.empty() || s.fullName.find_first_not_of(' ') == string::npos) {
+					cout << "Error: Name cannot be empty. Please enter a valid Full Name: ";
+				}
+				else {
+					break;
+				}
 			}
 
-			cout << "Programme (e.g., CT101): ";
-			while (getline(cin, s.programme) && s.programme.empty()) {
-				cout << "Programme name cannot be empty. Programme (e.g., CT101): ";
+			int maxYears = -1;
+			cout << "Programme Code (e.g., CT101): ";
+			while (true) {
+				getline(cin, s.programme);
+				maxYears = getProgrammeDuration(s.programme);
+				if (maxYears != -1) {
+					break;
+				}
+				else {
+					cout << "Error: '" << s.programme << "' is not a recognized programme.\n";
+					cout << "Please enter a valid Programme Code: ";
+				}
 			}
 
-			cout << "Year of Study (1 - 5): ";
-			while (!(cin >> s.yearOfStudy) || s.yearOfStudy < 1 || s.yearOfStudy > 5 || cin.peek() == '.') {
-				cout << "Invalid input. Please enter a whole number between 1 and 5: ";
+			cout << "Year of Study (1 - " << maxYears << "): ";
+			while (!(cin >> s.yearOfStudy) || s.yearOfStudy < 1 || s.yearOfStudy > maxYears || cin.peek() == '.') {
+				cout << "Invalid input. This programme has a max duration of " << maxYears << " years.\n";
+				cout << "Please enter a whole number between 1 and " << maxYears << ": ";
 				cin.clear();
 				cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			}
@@ -284,7 +428,6 @@ int main() {
 			}
 
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
 			cout << "Contact Number: ";
 			getline(cin, s.contactNum);
 
@@ -292,8 +435,7 @@ int main() {
 				cout << "Insertion attempt complete. Student added successfully.\n";
 			}
 			break;
-		}
-		case 4: {
+		}		case 4: {
 			string id;
 			cout << "Enter Student ID to delete: ";
 			cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear leftover enters
@@ -336,6 +478,14 @@ int main() {
 		case 8: {
 			cout << "\nWARNING: This will run tests on separate instances and may take some time.\n";
 			runAllBenchmarks();
+			break;
+		}
+		case 9: {
+			displayAllProgrammes();
+			break;
+		}
+		case 10: {
+			showEdgeCaseHandling();
 			break;
 		}
 		case 0: {
